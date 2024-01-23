@@ -188,12 +188,40 @@ if (isset($_POST['addcategory'])) {
                                                         ?></td>
                                                     <td><?php echo $p['tgldibuat'] ?></td>
                                                     <td>
-                                                        <!-- Edit button -->
-                                                        <a href="edit_kategori.php?id=<?php echo $id; ?>" class="btn btn-warning">Edit</a>
+                                                        <!-- Edit button - Munculkan modal -->
+                                                        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editModal<?php echo $id; ?>">Edit</button>
 
-                                                        <!-- Delete button -->
-                                                        <a href="delete_kategori.php?id=<?php echo $id; ?>" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+                                                        <!-- Delete button - Munculkan konfirmasi hapus -->
+                                                        <button type="button" class="btn btn-danger" onclick="confirmDelete('<?php echo $id; ?>')">Delete</button>
                                                     </td>
+                                                </tr>
+
+                                                <!-- Modal Edit -->
+                                                <div class="modal fade" id="editModal<?php echo $id; ?>" tabindex="-1" role="dialog" aria-labelledby="editModalLabel<?php echo $id; ?>" aria-hidden="true">
+                                                    <div class="modal-dialog" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="editModalLabel<?php echo $id; ?>">Edit Kategori</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <!-- Formulir Edit -->
+                                                                <form id="editForm<?php echo $id; ?>">
+                                                                    <div class="form-group">
+                                                                        <label>Nama Kategori</label>
+                                                                        <input name="namakategori" type="text" class="form-control" value="<?php echo $p['namakategori']; ?>" required autofocus>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                                                <button type="button" class="btn btn-primary" onclick="submitEdit('<?php echo $id; ?>')">Simpan Perubahan</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
                                                 </tr>
 
@@ -258,6 +286,45 @@ if (isset($_POST['addcategory'])) {
                 ]
             });
         });
+    </script>
+
+    <script>
+        function submitEdit(id) {
+            // Lakukan pengiriman data menggunakan AJAX
+            // Implementasikan AJAX sesuai kebutuhan Anda
+            var formData = $('#editForm' + id).serialize();
+
+            $.ajax({
+                type: 'POST',
+                url: 'proses_edit_kategori.php?id=' + id,
+                data: formData,
+                success: function(response) {
+                    // Handle respons dari server
+                    // Contoh: Munculkan notifikasi, perbarui tampilan tanpa refresh halaman, dll.
+                    alert('Perubahan berhasil disimpan.');
+                    // Tutup modal setelah berhasil disimpan
+                    $('#editModal' + id).modal('hide');
+                    // Refresh halaman jika diperlukan
+                    location.reload();
+                },
+                error: function(error) {
+                    // Handle kesalahan jika diperlukan
+                    console.error('Gagal mengirim permintaan AJAX:', error);
+                }
+            });
+        }
+
+        function confirmDelete(id) {
+            // Tampilkan konfirmasi hapus menggunakan sweetalert atau modal
+            var confirmDelete = confirm('Apakah Anda yakin ingin menghapus data ini?');
+            if (confirmDelete) {
+                // Lakukan pengiriman data hapus menggunakan AJAX atau akses file hapus langsung
+                // Implementasikan sesuai kebutuhan Anda
+                window.location.href = 'proses_hapus_kategori.php?id=' + id;
+            } else {
+                // Batalkan operasi hapus
+            }
+        }
     </script>
 
     <!-- jquery latest version -->
