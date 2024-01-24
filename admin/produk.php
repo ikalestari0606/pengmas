@@ -1,7 +1,51 @@
 <?php 
 	session_start();
 	include '../dbconnect.php';
-			
+	
+    if (isset($_POST["updateproduct"])) {
+        $idproduk = $_POST['idproduk'];
+        $namaproduk = $_POST['namaproduk'];
+        $idkategori = $_POST['idkategori'];
+        $deskripsi = $_POST['deskripsi'];
+        $rate = $_POST['rate'];
+        $hargabefore = $_POST['hargabefore'];
+        $hargaafter = $_POST['hargaafter'];
+    
+        // Lakukan validasi atau pemrosesan data update
+        // ...
+    
+        $query = "UPDATE produk SET 
+                    namaproduk = ?,
+                    idkategori = ?,
+                    deskripsi = ?,
+                    rate = ?,
+                    hargabefore = ?,
+                    hargaafter = ?
+                  WHERE idproduk = ?";
+    
+        $stmt = mysqli_prepare($conn, $query);
+    
+        // Bind parameters
+        mysqli_stmt_bind_param($stmt, "sssdddi", $namaproduk, $idkategori, $deskripsi, $rate, $hargabefore, $hargaafter, $idproduk);
+    
+        // Execute the statement
+        mysqli_stmt_execute($stmt);
+    
+        // Check for success
+        if (mysqli_stmt_affected_rows($stmt) > 0) {
+            // Success
+            echo "Product updated successfully!";
+        } else {
+            // Error
+            echo "Failed to update product. Please try again.";
+        }
+    
+        // Close the statement
+        mysqli_stmt_close($stmt);
+    }
+
+
+
 	if(isset($_POST["addproduct"])) {
 		$namaproduk=$_POST['namaproduk'];
 		$idkategori=$_POST['idkategori'];
@@ -201,6 +245,7 @@
 												<th>Rate</th>
 												<th>Harga Awal</th>
 												<th>Tanggal</th>
+												<th>Aksi</th>
 											</tr></thead><tbody>
 											<?php 
 											$brgs=mysqli_query($conn,"SELECT * from kategori k, produk p where k.idkategori=p.idkategori order by idproduk ASC");
@@ -220,12 +265,29 @@
 													<td><?php echo $p['hargabefore'] ?></td>
 													<td><?php echo $p['tgldibuat'] ?></td>
 													
-												</tr>		
+												
+												<td>
+                                                       
+                                                        <!-- Edit button -->
+                                                                <a href="javascript:void(0)" class="btn btn-warning" onclick="showUpdateModal(
+                                                                    <?php echo $p['idproduk']; ?>,
+                                                                    '<?php echo $p['namaproduk']; ?>',
+                                                                    '<?php echo $p['idkategori']; ?>',
+                                                                    '<?php echo $p['deskripsi']; ?>',
+                                                                    '<?php echo $p['rate']; ?>',
+                                                                    '<?php echo $p['hargabefore']; ?>',
+                                                                    '<?php echo $p['hargaafter']; ?>'
+                                                                    )">Edit</a>
+
+
+
+                                                        <!-- Delete button -->
+                                                        <button type="button" class="btn btn-danger" onclick="confirmDelete('<?php echo $p['idproduk']; ?>')">Delete</button>
+                                                    </td>	
+													</tr>	
 												
 												<?php 
 											}
-											
-												
 											
 		
 											?>
@@ -312,6 +374,70 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- Modal Update -->
+    <div id="myModalUpdate" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Update Produk</h4>
+                </div>
+
+                <div class="modal-body">
+                    <form action="update_produk.php" method="post" enctype="multipart/form-data">
+                        <!-- Include a hidden input field for the product ID -->
+                        <input name="idproduk" type="hidden" class="form-control" value="">
+
+                        <div class="form-group">
+                            <label>Nama Produk</label>
+                            <input name="namaproduk" type="text" class="form-control" required autofocus>
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Kategori</label>
+                            <select name="idkategori" class="form-control">
+                                <option selected>Pilih Kategori</option>
+                                <?php
+                                $det = mysqli_query($conn, "select * from kategori order by namakategori ASC") or die(mysqli_error());
+                                while ($d = mysqli_fetch_array($det)) {
+                                ?>
+                                    <option value="<?php echo $d['idkategori'] ?>"><?php echo $d['namakategori'] ?></option>
+                                <?php
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi</label>
+                            <input name="deskripsi" type="text" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Rating (1-5)</label>
+                            <input name="rate" type="number" class="form-control" min="1" max="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Harga Sebelum Diskon</label>
+                            <input name="hargabefore" type="number" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Harga Setelah Diskon</label>
+                            <input name="hargaafter" type="number" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Gambar</label>
+                            <input name="uploadgambar" type="file" class="form-control">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                    <input name="updateproduct" type="submit" class="btn btn-primary" value="Update">
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
 	
 	<script>
 	$(document).ready(function() {
@@ -359,6 +485,37 @@
     <!-- others plugins -->
     <script src="assets/js/plugins.js"></script>
     <script src="assets/js/scripts.js"></script>
+
+    <script>
+    // Function to set values for the modal fields
+    function showUpdateModal(idproduk, namaproduk, idkategori, deskripsi, rate, hargabefore, hargaafter) {
+        // Set values for the modal fields
+        $("#myModalUpdate input[name='idproduk']").val(idproduk);
+        $("#myModalUpdate input[name='namaproduk']").val(namaproduk);
+        $("#myModalUpdate select[name='idkategori']").val(idkategori);
+        $("#myModalUpdate input[name='deskripsi']").val(deskripsi);
+        $("#myModalUpdate input[name='rate']").val(rate);
+        $("#myModalUpdate input[name='hargabefore']").val(hargabefore);
+        $("#myModalUpdate input[name='hargaafter']").val(hargaafter);
+
+        // Show the modal
+        $("#myModalUpdate").modal("show");
+    }
+</script>
+
+<script>
+		function confirmDelete(id) {
+			// Tampilkan konfirmasi hapus menggunakan sweetalert atau modal
+			var confirmDelete = confirm('Apakah Anda yakin ingin menghapus produk ini?');
+			if (confirmDelete) {
+				// Lakukan pengiriman data hapus menggunakan AJAX atau akses file hapus langsung
+				// Implementasikan sesuai kebutuhan Anda
+				window.location.href = 'proses_hapus_produk.php?id=' + id;
+			} else {
+				// Batalkan operasi hapus
+			}
+		}
+	</script>
 	
 </body>
 </html>
